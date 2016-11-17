@@ -8,6 +8,23 @@
   <name>activemq</name>
   <url>http://maven.apache.org</url>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>uk.ac.diamond.zocalo.App</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <properties>
     <slf4jVersion>1.7.13</slf4jVersion>
   </properties>
