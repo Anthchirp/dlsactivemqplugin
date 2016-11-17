@@ -26,6 +26,7 @@
   </build>
 
   <properties>
+    <activemqVersion>5.14.1</activemqVersion>
     <slf4jVersion>1.7.13</slf4jVersion>
   </properties>
 
@@ -41,6 +42,11 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4jVersion}</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-broker</artifactId>
+      <version>${activemqVersion}</version>
     </dependency>
   </dependencies>
 </project>
