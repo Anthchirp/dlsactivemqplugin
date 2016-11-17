@@ -47,7 +47,7 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
     * the expiration date for messages that arrive with
     * no expiration date set (in Milliseconds).
     */
-    long zeroExpirationOverride = 3000;
+    long zeroExpirationOverride = 1 * 60 * 60 * 1000; // 1 hr
 
     /**
     * variable which (when non-zero) is used to limit
