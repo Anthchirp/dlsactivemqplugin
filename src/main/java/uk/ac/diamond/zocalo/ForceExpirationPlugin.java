@@ -21,8 +21,11 @@ import org.apache.activemq.broker.ProducerBrokerExchange;
 import org.apache.activemq.broker.region.Destination;
 import org.apache.activemq.broker.region.policy.DeadLetterStrategy;
 import org.apache.activemq.command.ActiveMQDestination;
+import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.command.ActiveMQMessage;
 import org.apache.activemq.command.Message;
+import org.apache.activemq.filter.DestinationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +36,18 @@ import org.slf4j.LoggerFactory;
  */
 public class ForceExpirationPlugin extends BrokerPluginSupport {
     private static final Logger LOG = LoggerFactory.getLogger(ForceExpirationPlugin.class);
+    
+    private static final DestinationFilter applicableQ = DestinationFilter.parseFilter(
+    		new ActiveMQQueue("zocdev.transient.>"));
+    private static final DestinationFilter applicableT = DestinationFilter.parseFilter(
+    		new ActiveMQTopic("zocdev.transient.>"));
+    		
     /**
     * variable which (when non-zero) is used to override
     * the expiration date for messages that arrive with
     * no expiration date set (in Milliseconds).
     */
-    long zeroExpirationOverride = 0;
+    long zeroExpirationOverride = 3000;
 
     /**
     * variable which (when non-zero) is used to limit
@@ -85,31 +94,45 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
 
     @Override
     public void send(ProducerBrokerExchange producerExchange, Message message) throws Exception {
-        LOG.warn("FEP: Seen message {}", new Object[]{ message.getMessageId() });
-
         if (message.getTimestamp() > 0 && !isDestinationDLQ(message) &&
            (processNetworkMessages || (message.getBrokerPath() == null || message.getBrokerPath().length == 0))) {
             // timestamp not been disabled and has not passed through a network or processNetworkMessages=true
 
-            long oldExpiration = message.getExpiration();
-            long newTimeStamp = System.currentTimeMillis();
-            long timeToLive = zeroExpirationOverride;
-            long oldTimestamp = message.getTimestamp();
-            if (oldExpiration > 0) {
-                timeToLive = oldExpiration - oldTimestamp;
-            }
-            if (timeToLive > 0 && ttlCeiling > 0 && timeToLive > ttlCeiling) {
-                timeToLive = ttlCeiling;
-            }
-            long expiration = timeToLive + newTimeStamp;
-            // In the scenario that the Broker is behind the clients we never want to set the
-            // Timestamp and Expiration in the past
-            if(!futureOnly || (expiration > oldExpiration)) {
-                if (timeToLive > 0 && expiration > 0) {
-                    message.setExpiration(expiration);
+            ActiveMQDestination destination = message.getDestination();
+            if (destination != null) {
+                if (applicableQ.matches(destination) || applicableT.matches(destination)) {
+                	String qname = destination.getQualifiedName();
+                    LOG.info("FEP: Seen message {} in applicable destination {}", new Object[]{ 
+                          message.getMessageId(),
+                          qname
+                          });
+
+                    long oldExpiration = message.getExpiration();
+                    long newTimeStamp = System.currentTimeMillis();
+                    long timeToLive = zeroExpirationOverride;
+//                  long oldTimestamp = message.getTimestamp();
+/*                  if (oldExpiration > 0) {
+                        timeToLive = oldExpiration - oldTimestamp;
+                    }
+                    if (timeToLive > 0 && ttlCeiling > 0 && timeToLive > ttlCeiling) {
+                        timeToLive = ttlCeiling;
+                    }
+                    long expiration = timeToLive + newTimeStamp;
+                    // In the scenario that the Broker is behind the clients we never want to set the
+                    // Timestamp and Expiration in the past
+                    if(!futureOnly || (expiration > oldExpiration)) {
+                        if (timeToLive > 0 && expiration > 0) {
+                            message.setExpiration(expiration);
+                        }
+                        message.setTimestamp(newTimeStamp);
+                        LOG.warn("Set message {} timestamp from {} to {}", new Object[]{ message.getMessageId(), oldTimestamp, newTimeStamp });
+                    }
+*/
+                    if (oldExpiration <= 0) {
+                    	message.setExpiration(newTimeStamp + timeToLive);
+                        LOG.info("Enforced message {} expiration to {}", new Object[]{ message.getMessageId(), message.getExpiration() });
+                    }
                 }
-                message.setTimestamp(newTimeStamp);
-                LOG.debug("Set message {} timestamp from {} to {}", new Object[]{ message.getMessageId(), oldTimestamp, newTimeStamp });
             }
         }
         super.send(producerExchange, message);
