@@ -37,9 +37,13 @@ import org.slf4j.LoggerFactory;
 public class ForceExpirationPlugin extends BrokerPluginSupport {
     private static final Logger LOG = LoggerFactory.getLogger(ForceExpirationPlugin.class);
     
-    private static final DestinationFilter applicableQ = DestinationFilter.parseFilter(
+    private static final DestinationFilter zocaloQ = DestinationFilter.parseFilter(
+    		new ActiveMQQueue("zocalo.transient.>"));
+    private static final DestinationFilter zocaloT = DestinationFilter.parseFilter(
+    		new ActiveMQTopic("zocalo.transient.>"));
+    private static final DestinationFilter zocdevQ = DestinationFilter.parseFilter(
     		new ActiveMQQueue("zocdev.transient.>"));
-    private static final DestinationFilter applicableT = DestinationFilter.parseFilter(
+    private static final DestinationFilter zocdevT = DestinationFilter.parseFilter(
     		new ActiveMQTopic("zocdev.transient.>"));
     		
     /**
@@ -100,7 +104,8 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
 
             ActiveMQDestination destination = message.getDestination();
             if (destination != null) {
-                if (applicableQ.matches(destination) || applicableT.matches(destination)) {
+                if (zocaloQ.matches(destination) || zocaloT.matches(destination) ||
+                    zocdevQ.matches(destination) || zocdevT.matches(destination)) {
                 	String qname = destination.getQualifiedName();
 //                  LOG.debug("FEP: Seen message {} in applicable destination {}", new Object[]{
 //                        message.getMessageId(),
