@@ -4,7 +4,7 @@
   <groupId>uk.ac.diamond.zocalo</groupId>
   <artifactId>activemq-plugins</artifactId>
   <packaging>jar</packaging>
-  <version>0.1</version>
+  <version>0.2</version>
   <name>activemq</name>
   <url>http://maven.apache.org</url>
 
@@ -30,7 +30,7 @@
   </build>
 
   <properties>
-    <activemqVersion>5.14.1</activemqVersion>
+    <activemqVersion>5.14.5</activemqVersion>
     <slf4jVersion>1.7.13</slf4jVersion>
   </properties>
 

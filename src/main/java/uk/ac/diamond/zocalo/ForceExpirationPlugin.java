@@ -26,8 +26,8 @@ import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.command.ActiveMQMessage;
 import org.apache.activemq.command.Message;
 import org.apache.activemq.filter.DestinationFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 
 /**
  * A Broker interceptor which updates the expiration timestamp on a message
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class ForceExpirationPlugin extends BrokerPluginSupport {
-    private static final Logger LOG = LoggerFactory.getLogger(ForceExpirationPlugin.class);
+//  private static final Logger LOG = LoggerFactory.getLogger(ForceExpirationPlugin.class);
     
     private static final DestinationFilter zocaloQ = DestinationFilter.parseFilter(
     		new ActiveMQQueue("zocalo.transient.>"));
@@ -54,19 +54,6 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
     long zeroExpirationOverride = 1 * 60 * 60 * 1000; // 1 hr
 
     /**
-    * variable which (when non-zero) is used to limit
-    * the expiration date (in Milliseconds).
-    */
-    long ttlCeiling = 0;
-
-    /**
-     * If true, the plugin will not update timestamp to past values
-     * False by default
-     */
-    boolean futureOnly = false;
-
-
-    /**
      * if true, update timestamp even if message has passed through a network
      * default false
      */
@@ -78,18 +65,6 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
     public void setZeroExpirationOverride(long ttl)
     {
         this.zeroExpirationOverride = ttl;
-    }
-
-    /**
-    * setter method for ttlCeiling
-    */
-    public void setTtlCeiling(long ttlCeiling)
-    {
-        this.ttlCeiling = ttlCeiling;
-    }
-
-    public void setFutureOnly(boolean futureOnly) {
-        this.futureOnly = futureOnly;
     }
 
     public void setProcessNetworkMessages(Boolean processNetworkMessages) {
@@ -106,17 +81,16 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
             if (destination != null) {
                 if (zocaloQ.matches(destination) || zocaloT.matches(destination) ||
                     zocdevQ.matches(destination) || zocdevT.matches(destination)) {
-                	String qname = destination.getQualifiedName();
 //                  LOG.debug("FEP: Seen message {} in applicable destination {}", new Object[]{
 //                        message.getMessageId(),
-//                        qname
+//                        destination.getQualifiedName()
 //                        });
 
                     long newTimeStamp = System.currentTimeMillis();
                     long timeToLive = zeroExpirationOverride;
 //                  long oldTimestamp = message.getTimestamp();
                     message.setExpiration(newTimeStamp + timeToLive);
-                    LOG.debug("Set message {} expiration to {}", new Object[]{ message.getMessageId(), message.getExpiration() });
+//                  LOG.debug("Set message {} expiration to {}", new Object[]{ message.getMessageId(), message.getExpiration() });
                 }
             }
         }
@@ -124,25 +98,25 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
     }
 
     private boolean isDestinationDLQ(Message message) {
-        DeadLetterStrategy deadLetterStrategy;
-        Message tmp;
-
-        Destination regionDestination = (Destination) message.getRegionDestination();
-        if (message != null && regionDestination != null) {
-            deadLetterStrategy = regionDestination.getDeadLetterStrategy();
-            if (deadLetterStrategy != null && message.getOriginalDestination() != null) {
-                // Cheap copy, since we only need two fields
-                tmp = new ActiveMQMessage();
-                tmp.setDestination(message.getOriginalDestination());
-                tmp.setRegionDestination(regionDestination);
-
-                // Determine if we are headed for a DLQ
-                ActiveMQDestination deadLetterDestination = deadLetterStrategy.getDeadLetterQueueFor(tmp, null);
-                if (deadLetterDestination.equals(message.getDestination())) {
-                    return true;
-                }
-            }
-        }
+      Destination regionDestination = (Destination) message.getRegionDestination();
+      if (regionDestination == null)
         return false;
+
+      DeadLetterStrategy deadLetterStrategy = regionDestination.getDeadLetterStrategy();
+      if (deadLetterStrategy == null)
+        return false;
+
+      ActiveMQDestination originalDestination = message.getOriginalDestination();
+      if (originalDestination == null)
+        return false;
+
+      // Cheap copy, since we only need two fields
+      Message tmp = new ActiveMQMessage();
+      tmp.setDestination(originalDestination);
+      tmp.setRegionDestination(regionDestination);
+
+      // Determine if we are headed for a DLQ
+      ActiveMQDestination deadLetterDestination = deadLetterStrategy.getDeadLetterQueueFor(tmp, null);
+      return deadLetterDestination.equals(message.getDestination());
     }
 }
