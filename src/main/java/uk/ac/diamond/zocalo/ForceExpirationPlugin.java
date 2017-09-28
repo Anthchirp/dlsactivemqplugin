@@ -42,9 +42,9 @@ public class ForceExpirationPlugin extends BrokerPluginSupport {
     private static final DestinationFilter zocaloT = DestinationFilter.parseFilter(
     		new ActiveMQTopic("zocalo.transient.>"));
     private static final DestinationFilter zocdevQ = DestinationFilter.parseFilter(
-    		new ActiveMQQueue("zocdev.transient.>"));
+                new ActiveMQQueue("zocdev.>"));
     private static final DestinationFilter zocdevT = DestinationFilter.parseFilter(
-    		new ActiveMQTopic("zocdev.transient.>"));
+                new ActiveMQTopic("zocdev.>"));
     		
     /**
     * variable which (when non-zero) is used to override
